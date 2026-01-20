@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - KRMU</title>
+    <title>Login - KRMU Green</title>
     <link rel="stylesheet" href="styles.css">
 
     <script type="module">
-      // 1. Import Firebase Functions
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      // IMPORT ALL AUTH FUNCTIONS
+      import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
       import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-      // 2. YOUR CONFIGURATION
+      // YOUR SPECIFIC KEYS
       const firebaseConfig = {
         apiKey: "AIzaSyCcrmSuKbwTsUOigbZu_maCQmvf4HQ8ia4",
         authDomain: "krmu-impact-bf09e.firebaseapp.com",
@@ -23,17 +24,23 @@
         databaseURL: "https://krmu-impact-bf09e-default-rtdb.firebaseio.com"
       };
 
-      // 3. Initialize App
+      // INITIALIZE
       const app = initializeApp(firebaseConfig);
-      const db = getDatabase(app);
-
-      // 4. Make Database Global for script.js
-      window.db = db;
+      
+      // MAKE FUNCTIONS AVAILABLE TO SCRIPT.JS
+      window.auth = getAuth(app);
+      window.db = getDatabase(app);
       window.dbRef = ref;
       window.dbPush = push;
       window.dbOnValue = onValue;
-      
-      console.log("🔥 Firebase Connected Successfully!");
+
+      // CRITICAL: EXPORT AUTH FUNCTIONS SO LOGIN BUTTON WORKS
+      window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+      window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+      window.signOut = signOut;
+      window.onAuthStateChanged = onAuthStateChanged;
+
+      console.log("🔥 Firebase & Auth Functions Ready");
       window.dispatchEvent(new Event('firebase-ready'));
     </script>
 </head>
@@ -53,20 +60,29 @@
     <div class="main-container">
         <div class="glass-panel" style="max-width: 450px; text-align: left;">
             <div style="text-align:center; margin-bottom: 2rem;">
-                <h2 class="neon-text" style="font-size: 2.5rem;">Student Login</h2>
-                <p style="color:#aaa; font-size: 0.9rem; margin-top: 5px;">Access the Sustainability Portal</p>
+                <h2 id="formTitle" class="neon-text" style="font-size: 2.5rem;">Student Login</h2>
+                <p style="color:#aaa; font-size: 0.9rem; margin-top: 5px;">Verify your @krmu.edu.in identity</p>
             </div>
             
-            <form id="loginForm">
+            <form id="authForm">
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="color:var(--primary); font-family: var(--font-head); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Roll Number</label>
-                    <input type="text" id="roll" placeholder="Ex: 21005678" style="width:100%; padding:15px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white;" required autocomplete="off">
+                    <label>Roll Number</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="text" id="roll" placeholder="Ex: 21005678" style="flex:1; padding:15px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white;" required autocomplete="off">
+                        <span style="color:var(--primary); font-weight:bold; font-size:0.9rem;">@krmu.edu.in</span>
+                    </div>
                 </div>
                 <div style="margin-bottom: 2rem;">
-                    <label style="color:var(--primary); font-family: var(--font-head); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Password</label>
-                    <input type="password" id="pass" placeholder="••••••••" style="width:100%; padding:15px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white;" required>
+                    <label>Password</label>
+                    <input type="password" id="pass" placeholder="Create a password" style="width:100%; padding:15px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white;" required>
                 </div>
-                <button type="submit" class="glow-btn" style="width:100%; text-align:center; cursor:pointer;">Login & Start</button>
+                
+                <button type="submit" id="submitBtn" class="glow-btn" style="width:100%; text-align:center; cursor:pointer;">Login</button>
+                
+                <p style="text-align:center; margin-top:15px; font-size:0.8rem; color:#aaa;">
+                    <span id="toggleText">First time?</span> 
+                    <a href="#" id="toggleAuth" style="color:var(--primary); font-weight:bold; text-decoration:none;">Register & Verify</a>
+                </p>
             </form>
         </div>
     </div>
