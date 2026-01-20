@@ -320,3 +320,142 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     #question-text { font-size: 1.4rem; margin-bottom: 2rem; }
     .quiz-option { padding: 15px; font-size: 1rem; }
 }
+/* --- DASHBOARD SPECIFIC STYLES --- */
+
+.dashboard-split {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr; /* Text takes less space, Stats take more */
+    gap: 4rem;
+    width: 100%;
+    max-width: 1200px;
+    align-items: center;
+}
+
+.hero-content {
+    text-align: left;
+}
+
+.hero-title {
+    font-size: 5rem;
+    line-height: 1;
+    margin-bottom: 1.5rem;
+}
+
+.hero-desc {
+    font-size: 1.1rem;
+    color: #ccc;
+    line-height: 1.6;
+    max-width: 400px;
+}
+
+/* THE BENTO GRID (Right Side) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 Columns */
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.stat-card {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 180px;
+}
+
+.full-width {
+    grid-column: span 2; /* Make these cards stretch across */
+    text-align: left;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* LEADERBOARD & LIST STYLING */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    width: 100%;
+}
+
+.leader-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: 0.2s;
+}
+.leader-item:hover {
+    background: rgba(255,255,255,0.08);
+    transform: translateX(5px);
+}
+
+.rank-badge {
+    background: var(--primary);
+    color: black;
+    font-weight: bold;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 12px;
+    font-size: 0.8rem;
+}
+
+.scrollable-list {
+    max-height: 150px;
+    overflow-y: auto;
+    width: 100%;
+    padding-right: 5px;
+}
+
+/* Custom Scrollbar for the list */
+.scrollable-list::-webkit-scrollbar { width: 4px; }
+.scrollable-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.scrollable-list::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+/* Pulsing Dot Animation */
+.pulsing-dot {
+    width: 10px; height: 10px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    box-shadow: 0 0 0 rgba(0, 255, 157, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 255, 157, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 255, 157, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 157, 0); }
+}
+
+/* Responsive Mobile */
+@media (max-width: 900px) {
+    .dashboard-split {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        text-align: center;
+    }
+    .hero-content {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr; /* Stack cards on mobile */
+    }
+    .full-width {
+        grid-column: span 1;
+    }
+}
