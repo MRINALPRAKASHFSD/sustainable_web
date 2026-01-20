@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - KRMU</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <script type="module">
+      // 1. Import Firebase Functions
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+      // 2. YOUR CONFIGURATION
+      const firebaseConfig = {
+        apiKey: "AIzaSyCcrmSuKbwTsUOigbZu_maCQmvf4HQ8ia4",
+        authDomain: "krmu-impact-bf09e.firebaseapp.com",
+        projectId: "krmu-impact-bf09e",
+        storageBucket: "krmu-impact-bf09e.firebasestorage.app",
+        messagingSenderId: "676855708371",
+        appId: "1:676855708371:web:6e5ca271427a61312df226",
+        measurementId: "G-2ZHP3D9F8F",
+        databaseURL: "https://krmu-impact-bf09e-default-rtdb.firebaseio.com"
+      };
+
+      // 3. Initialize App
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      // 4. Make Database Global for script.js
+      window.db = db;
+      window.dbRef = ref;
+      window.dbPush = push;
+      window.dbOnValue = onValue;
+      
+      console.log("🔥 Firebase Connected Successfully!");
+      window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+</head>
+<body>
+    <div class="video-bg-container">
+        <video autoplay loop muted playsinline class="back-video">
+            <source src="background.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="video-overlay"></div>
+
+    <nav class="navbar">
+        <div class="brand">KRMU <span class="glow-brand">IMPACT</span></div>
+        <div style="display:flex; gap: 15px; align-items: center;">
+            <button onclick="exportToCSV()" class="glow-btn" style="font-size:0.7rem; padding:8px 15px; border-color:#fff; color:#fff;">EXPORT CSV</button>
+            <button onclick="clearData()" style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; font-size: 0.7rem;">[RESET]</button>
+            <a href="index.html" class="glow-btn">Take Survey</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="dashboard-split">
+            
+            <div class="hero-content">
+                <h1 class="hero-title neon-text">Collective<br>Future</h1>
+                <p class="hero-desc">Real-time sustainability tracking. Watch the numbers grow as we build a greener campus together.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="glass-panel full-width" style="text-align:left; padding:1.5rem;">
+                    <div class="list-header">
+                        <h3 style="color:var(--primary);">🏆 Top Departments</h3>
+                        <span style="font-size:0.7rem; color:#aaa;">LIVE RANKING</span>
+                    </div>
+                    <div id="deptLeaderboard">
+                        <p style="color:#666; font-size:0.9rem;">Connecting to live feed...</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <span class="big-number" id="totalCount">0</span>
+                    <h3>Responses</h3>
+                </div>
+                <div class="glass-panel">
+                    <span class="big-number" id="volunteers">0</span>
+                    <h3>Volunteers</h3>
+                </div>
+
+                <div class="recent-activity full-width">
+                    <h4 style="margin-bottom: 15px; color: #fff; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px;">Recent Pledges</h4>
+                    <div id="pledgeList" style="height: 120px; overflow-y: auto;">
+                        <p>Waiting for data...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

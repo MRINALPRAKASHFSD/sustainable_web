@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey - KRMU Green</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+      // YOUR CONFIGURATION
+      const firebaseConfig = {
+        apiKey: "AIzaSyCcrmSuKbwTsUOigbZu_maCQmvf4HQ8ia4",
+        authDomain: "krmu-impact-bf09e.firebaseapp.com",
+        projectId: "krmu-impact-bf09e",
+        storageBucket: "krmu-impact-bf09e.firebasestorage.app",
+        messagingSenderId: "676855708371",
+        appId: "1:676855708371:web:6e5ca271427a61312df226",
+        measurementId: "G-2ZHP3D9F8F",
+        databaseURL: "https://krmu-impact-bf09e-default-rtdb.firebaseio.com"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      window.db = db;
+      window.dbRef = ref;
+      window.dbPush = push;
+      window.dbOnValue = onValue;
+      window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+</head>
+<body>
+    <div class="video-bg-container">
+        <video autoplay loop muted playsinline class="back-video">
+            <source src="background.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="video-overlay"></div>
+
+    <nav class="navbar">
+        <div class="brand">Student <span class="glow-brand">VOICE</span></div>
+        <div style="display:flex; align-items:center; gap: 20px;">
+            <span id="userDisplay" style="color: var(--primary); font-family: var(--font-head); font-size: 0.9rem; letter-spacing: 1px;">STUDENT</span>
+            <button onclick="logout()" class="glow-btn" style="font-size: 0.7rem; padding: 8px 18px;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="dashboard-split">
+            
+            <div class="hero-content">
+                <h1 class="hero-title neon-text">Shape The<br>Future</h1>
+                <p class="hero-desc">Your input drives real change. Complete this survey to generate your <span style="color:var(--primary)">Green Badge Certificate</span>.</p>
+            </div>
+
+            <div class="glass-panel" style="text-align: left; padding: 2.5rem; max-height: 80vh; overflow-y: auto;">
+                <form id="surveyForm">
+                    <div class="input-group">
+                        <label>1. Department</label>
+                        <select id="department" required>
+                            <option value="">Select Option...</option>
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="ME">Mechanical</option>
+                            <option value="CE">Civil</option>
+                            <option value="Law">Law</option>
+                            <option value="Mgmt">Management</option>
+                            <option value="Medical">Medical / Allied</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>2. How do you travel to campus?</label>
+                        <select id="transport" required>
+                            <option value="">Select Mode...</option>
+                            <option value="Bus">College Bus</option>
+                            <option value="Car">Personal Car</option>
+                            <option value="Bike">Motorbike/Scooter</option>
+                            <option value="Metro">Metro / Public Transport</option>
+                            <option value="Walk">Walk / Bicycle</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>3. Which area needs green improvement?</label>
+                        <select id="improvement" required>
+                            <option value="">Select Area...</option>
+                            <option value="Cafeteria">Cafeteria Waste</option>
+                            <option value="Classrooms">Classroom Energy</option>
+                            <option value="Grounds">Campus Grounds</option>
+                            <option value="Water">Water Usage</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>4. Commitment Score</label>
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                             <input type="range" id="commitment" min="1" max="10" value="5" oninput="this.nextElementSibling.innerText = this.value" style="flex:1; cursor: pointer;">
+                             <span style="font-size: 2rem; font-weight: 800; color: var(--primary); font-family: var(--font-head); text-shadow: 0 0 10px var(--primary-glow);">5</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>5. Volunteer Availability</label>
+                        <select id="volunteer">
+                            <option value="Yes">Yes, I'm interested</option>
+                            <option value="No">No, maybe later</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>6. Personal Pledge</label>
+                        <textarea id="pledge" rows="3" placeholder="I pledge to..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="glow-btn" style="width: 100%; margin-top: 1rem;">Submit & Get Certificate</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
