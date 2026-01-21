@@ -1,29 +1,15 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "client" }
-    },
-
-
-
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-
-
-
-
-
+  "buildCommand": "echo done",
+  "outputDirectory": "client",
+  "functions": {
+    "api/*.js": {
+      "runtime": "@vercel/node@3"
     }
-  ],
-  "routes": [
-    { "src": "/auth/(.*)", "dest": "/api/auth.js" },
-    { "src": "/stats/(.*)", "dest": "/api/stats.js" },
-    { "src": "/health", "dest": "/api/health.js" },
-    { "src": "/(.*)", "dest": "/client/$1" },
-    { "src": "/(.*)", "dest": "/client/index.html" }
+  },
+  "rewrites": [
+    { "source": "/auth/:path*", "destination": "/api/auth.js" },
+    { "source": "/stats/:path*", "destination": "/api/stats.js" },
+    { "source": "/health", "destination": "/api/health.js" }
   ]
 }
