@@ -5,7 +5,12 @@
     "scripts": {
         "dev": "npm run dev --prefix server",
         "start": "npm start --prefix server",
-        "install-all": "npm install && npm install --prefix server"
+        "install-all": "npm install && npm install --prefix server",
+        "vercel-build": "echo 'Build complete'"
     },
-    "dependencies": {}
+    "dependencies": {
+        "jsonwebtoken": "^9.0.2",
+        "firebase-admin": "^13.6.0",
+        "nodemailer": "^6.9.8"
+    }
 }

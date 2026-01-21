@@ -4,9 +4,12 @@ dist/
 
 # Env & Secrets
 .env
+.env.local
+.env*.local
 *.json
 !package.json
 !package-lock.json
+!vercel.json
 service-account.json
 
 # Local DB
@@ -18,3 +21,6 @@ service-account.json
 # OS files
 .DS_Store
 Thumbs.db
+
+# Vercel
+.vercel
