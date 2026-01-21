@@ -5,17 +5,33 @@ import { generateOTP, hashOTP, verifyOTP } from '../utils/otp.js';
 import { sendOTPEmail } from '../utils/email.js';
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin from environment variable
+// Initialize Firebase Admin from environment variables
 if (!admin.apps.length) {
     try {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-        if (serviceAccount.project_id) {
+        // Option 1: Use individual env vars (easier to set)
+        if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+                })
+            });
+            console.log('✅ Firebase Admin initialized (from individual env vars)');
+        }
+        // Option 2: Use full JSON (if provided)
+        else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            // Fix newlines in private key if needed
+            if (serviceAccount.private_key) {
+                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+            }
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount)
             });
-            console.log('✅ Firebase Admin initialized');
+            console.log('✅ Firebase Admin initialized (from JSON)');
         } else {
-            console.log('⚠️ Firebase not configured - FIREBASE_SERVICE_ACCOUNT env var missing');
+            console.log('⚠️ Firebase not configured - set FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL env vars');
         }
     } catch (e) {
         console.error('❌ Firebase init error:', e.message);
