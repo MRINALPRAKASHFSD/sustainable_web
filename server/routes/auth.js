@@ -4,16 +4,22 @@ import db from '../db.js';
 import { generateOTP, hashOTP, verifyOTP } from '../utils/otp.js';
 import { sendOTPEmail } from '../utils/email.js';
 import admin from 'firebase-admin';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const serviceAccount = require('../service-account.json');
-
-// Initialize Firebase Admin
+// Initialize Firebase Admin from environment variable
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+        if (serviceAccount.project_id) {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+            console.log('✅ Firebase Admin initialized');
+        } else {
+            console.log('⚠️ Firebase not configured - FIREBASE_SERVICE_ACCOUNT env var missing');
+        }
+    } catch (e) {
+        console.error('❌ Firebase init error:', e.message);
+    }
 }
 
 const router = Router();
