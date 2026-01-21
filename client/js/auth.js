@@ -3,7 +3,10 @@
    OTP Authentication Client (ES6)
    ============================================ */
 
-const API_URL = 'http://localhost:3000';
+// Automatically detect API URL based on current domain
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : window.location.origin;
 
 // ========== State ==========
 let resendTimer = null;
