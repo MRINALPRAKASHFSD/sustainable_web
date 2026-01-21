@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { sql } from '@vercel/postgres';
 
 // Parse cookies from header
 function parseCookies(cookieHeader) {
@@ -48,24 +49,37 @@ export default async function handler(req, res) {
     try {
         // GET /stats/summary
         if (path === '/summary' && req.method === 'GET') {
-            // In production, fetch from your database
-            // For now, return mock data
+            const studentCount = await sql`SELECT COUNT(*) as count FROM students`;
+            const otpCount = await sql`SELECT COUNT(*) as count FROM otp_requests`;
+            const totalImpact = studentCount.rows[0].count * 10;
+
             return res.json({
                 success: true,
                 stats: {
-                    studentCount: 0,
-                    otpCount: 0,
-                    totalImpact: 0
+                    studentCount: studentCount.rows[0].count,
+                    otpCount: otpCount.rows[0].count,
+                    totalImpact
                 }
             });
         }
 
         // GET /stats/activity
         if (path === '/activity' && req.method === 'GET') {
-            // In production, fetch from your database
+            const activity = await sql`
+                SELECT 
+                    otp_requests.created_at, 
+                    otp_requests.purpose,
+                    students.name,
+                    students.roll_number
+                FROM otp_requests
+                LEFT JOIN students ON otp_requests.email = students.email
+                ORDER BY otp_requests.created_at DESC
+                LIMIT 20
+            `;
+
             return res.json({
                 success: true,
-                activity: []
+                activity: activity.rows
             });
         }
 

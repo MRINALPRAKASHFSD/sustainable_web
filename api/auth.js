@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import admin from 'firebase-admin';
 import crypto from 'crypto';
+import { sql } from '@vercel/postgres';
 
 // Initialize Firebase Admin (singleton)
 if (!admin.apps.length) {
@@ -14,11 +15,6 @@ if (!admin.apps.length) {
 
 const OTP_EXPIRY_MINUTES = 5;
 const MAX_ATTEMPTS = 5;
-
-// In-memory store for serverless (use Redis/KV in production)
-// For production, replace with Vercel KV, Upstash Redis, or similar
-const otpStore = new Map();
-const studentStore = new Map();
 
 // Helper functions
 function generateOTP() {
@@ -122,26 +118,47 @@ export default async function handler(req, res) {
                 return res.json({ success: true, message: 'If eligible, you will receive an OTP' });
             }
 
-            const student = studentStore.get(email);
+            const student = await sql`SELECT id FROM students WHERE email = ${email}`;
 
-            if (purpose === 'login' && !student) {
+            if (purpose === 'login' && student.rows.length === 0) {
                 return res.json({ success: true, message: 'If eligible, you will receive an OTP' });
             }
-            if (purpose === 'register' && student) {
+            if (purpose === 'register' && student.rows.length > 0) {
                 return res.json({ success: true, message: 'If eligible, you will receive an OTP' });
+            }
+
+            // Check rate limit
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+            const recentOTPs = await sql`
+                SELECT COUNT(*) as count, MAX(created_at) as last_sent 
+                FROM otp_requests 
+                WHERE email = ${email} AND created_at > ${oneHourAgo}
+            `;
+
+            if (recentOTPs.rows[0].count >= 5) {
+                return res.status(429).json({ success: false, message: 'Too many requests. Try again later.' });
+            }
+
+            if (recentOTPs.rows[0].last_sent) {
+                const lastSent = new Date(recentOTPs.rows[0].last_sent).getTime();
+                const diff = (Date.now() - lastSent) / 1000;
+                if (diff < 30) {
+                    return res.status(429).json({
+                        success: false,
+                        message: `Please wait ${Math.ceil(30 - diff)} seconds before requesting again`
+                    });
+                }
             }
 
             // Generate and store OTP
             const otp = generateOTP();
             const otpHash = hashOTP(otp);
-            const expiresAt = Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
+            const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
-            otpStore.set(`${email}:${purpose}`, {
-                hash: otpHash,
-                expiresAt,
-                attempts: 0,
-                createdAt: Date.now()
-            });
+            await sql`
+                INSERT INTO otp_requests (email, purpose, otp_hash, expires_at, ip)
+                VALUES (${email}, ${purpose}, ${otpHash}, ${expiresAt}, ${req.headers['x-forwarded-for'] || req.connection.remoteAddress})
+            `;
 
             // Send email
             try {
@@ -166,20 +183,31 @@ export default async function handler(req, res) {
                 return res.status(400).json({ success: false, message: 'Invalid OTP format' });
             }
 
-            const otpKey = `${email.toLowerCase()}:${purpose}`;
-            const otpRecord = otpStore.get(otpKey);
+            // Find valid OTP request
+            const now = new Date().toISOString();
+            const otpRecord = await sql`
+                SELECT * FROM otp_requests 
+                WHERE email = ${email.toLowerCase()} AND purpose = ${purpose} AND used_at IS NULL 
+                AND expires_at > ${now}
+                ORDER BY created_at DESC LIMIT 1
+            `;
 
-            if (!otpRecord || otpRecord.expiresAt < Date.now()) {
+            if (otpRecord.rows.length === 0) {
                 return res.status(400).json({ success: false, message: 'OTP expired or invalid' });
             }
 
-            if (otpRecord.attempts >= MAX_ATTEMPTS) {
+            const record = otpRecord.rows[0];
+
+            // Check attempts
+            if (record.attempts >= MAX_ATTEMPTS) {
                 return res.status(400).json({ success: false, message: 'Too many attempts. Request a new OTP.' });
             }
 
-            if (!verifyOTP(otp, otpRecord.hash)) {
-                otpRecord.attempts++;
-                const remaining = MAX_ATTEMPTS - otpRecord.attempts;
+            // Verify OTP
+            if (!verifyOTP(otp, record.otp_hash)) {
+                // Increment attempts
+                await sql`UPDATE otp_requests SET attempts = attempts + 1 WHERE id = ${record.id}`;
+                const remaining = MAX_ATTEMPTS - record.attempts - 1;
                 return res.status(400).json({
                     success: false,
                     message: `Invalid OTP. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`
@@ -187,7 +215,7 @@ export default async function handler(req, res) {
             }
 
             // Mark OTP as used
-            otpStore.delete(otpKey);
+            await sql`UPDATE otp_requests SET used_at = ${now} WHERE id = ${record.id}`;
 
             let user;
 
@@ -201,26 +229,33 @@ export default async function handler(req, res) {
                 const phone = payload.phone?.trim() || null;
 
                 // Check if already exists
-                if (studentStore.has(email.toLowerCase())) {
+                const existing = await sql`
+                    SELECT id FROM students WHERE roll_number = ${rollNumber} OR email = ${email.toLowerCase()}
+                `;
+
+                if (existing.rows.length > 0) {
                     return res.status(400).json({ success: false, message: 'Account already exists. Please login.' });
                 }
 
-                user = {
-                    id: Date.now(),
-                    rollNumber,
-                    email: email.toLowerCase(),
-                    name,
-                    phone,
-                    createdAt: new Date().toISOString()
-                };
+                // Create student
+                const result = await sql`
+                    INSERT INTO students (roll_number, email, name, phone)
+                    VALUES (${rollNumber}, ${email.toLowerCase()}, ${name}, ${phone})
+                    RETURNING id, roll_number, email, name
+                `;
 
-                studentStore.set(email.toLowerCase(), user);
-                studentStore.set(rollNumber, user);
+                user = result.rows[0];
             } else {
-                user = studentStore.get(email.toLowerCase());
-                if (!user) {
+                // Login: fetch existing user
+                const result = await sql`
+                    SELECT id, roll_number, email, name FROM students WHERE email = ${email.toLowerCase()}
+                `;
+
+                if (result.rows.length === 0) {
                     return res.status(400).json({ success: false, message: 'Account not found' });
                 }
+
+                user = result.rows[0];
             }
 
             // Create Firebase custom token
@@ -228,7 +263,7 @@ export default async function handler(req, res) {
             if (admin.apps.length) {
                 try {
                     firebaseToken = await admin.auth().createCustomToken(user.email, {
-                        rollNumber: user.rollNumber,
+                        rollNumber: user.roll_number,
                         name: user.name
                     });
                 } catch (e) {
@@ -238,7 +273,7 @@ export default async function handler(req, res) {
 
             // Create JWT
             const jwtToken = jwt.sign(
-                { id: user.id, email: user.email, rollNumber: user.rollNumber, name: user.name },
+                { id: user.id, email: user.email, rollNumber: user.roll_number, name: user.name },
                 process.env.JWT_SECRET || 'fallback-secret-change-in-production',
                 { expiresIn: '7d' }
             );
@@ -249,7 +284,7 @@ export default async function handler(req, res) {
             return res.json({
                 success: true,
                 message: purpose === 'register' ? 'Registration successful' : 'Login successful',
-                user: { id: user.id, email: user.email, rollNumber: user.rollNumber, name: user.name },
+                user: { id: user.id, email: user.email, rollNumber: user.roll_number, name: user.name },
                 firebaseToken
             });
         }
