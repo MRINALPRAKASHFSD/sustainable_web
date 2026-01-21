@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - KRMU Green</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcrmSuKbwTsUOigbZu_maCQmvf4HQ8ia4",
+            authDomain: "krmu-impact-bf09e.firebaseapp.com",
+            projectId: "krmu-impact-bf09e",
+            storageBucket: "krmu-impact-bf09e.firebasestorage.app",
+            messagingSenderId: "676855708371",
+            appId: "1:676855708371:web:6e5ca271427a61312df226",
+            measurementId: "G-2ZHP3D9F8F",
+            databaseURL: "https://krmu-impact-bf09e-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.db = getDatabase(app);
+        window.dbRef = ref;
+        window.dbPush = push;
+        window.dbOnValue = onValue;
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+</head>
+
+<body>
+    <div class="video-bg-container">
+        <video autoplay loop muted playsinline class="back-video">
+            <source src="background.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="video-overlay"></div>
+
+    <div id="toast" class="popup-toast">Correct!</div>
+
+    <nav class="navbar">
+        <div class="brand">Sustainable <span class="glow-brand">QUIZ</span></div>
+        <div style="display:flex; align-items:center; gap: 20px;">
+            <div class="score-badge">Score: <span id="current-score">0</span></div>
+            <span id="userRoll" style="color: var(--primary); font-size: 0.8rem;"></span>
+            <button id="logoutBtn" class="glow-btn" style="font-size: 0.7rem;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="glass-panel"
+            style="max-width: 900px; width: 95%; padding: 0; min-height: 600px; overflow: hidden; display: flex; flex-direction: column;">
+
+            <div
+                style="padding: 1.5rem 2.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                <span style="color: #aaa; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px;">KRMU
+                    Challenge</span>
+                <div>
+                    <span id="q-number" style="font-size: 2rem; font-weight: bold; color: var(--primary);">1</span>
+                    <span style="color: #666; font-size: 1.2rem;">/ 20</span>
+                </div>
+            </div>
+
+            <div class="flashcard-container" style="flex: 1;">
+                <div class="flashcard-inner" id="card-inner">
+
+                    <div class="flashcard-front">
+                        <h3 id="question-text">Loading Question...</h3>
+
+                        <div id="options-container"></div>
+                    </div>
+
+                    <div class="flashcard-back">
+                        <div style="max-width: 80%;">
+                            <h2
+                                style="color: var(--primary); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px;">
+                                Insight</h2>
+                            <h3 id="correct-answer-display"
+                                style="color: white; margin-bottom: 1.5rem; font-size: 1.4rem;"></h3>
+                            <p id="explanation-text" style="color: #ddd; line-height: 1.8; font-size: 1.1rem;">
+                                Explanation text goes here...</p>
+                            <button id="flipBackBtn" class="glow-btn" style="margin-top: 3rem;">Back to Quiz</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div
+                style="padding: 1.5rem 2.5rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                <button id="skipBtn" class="glow-btn"
+                    style="border-color: #666; color: #888; background: transparent;">Skip Question</button>
+                <div style="display: flex; gap: 15px;">
+                    <button id="flipBtn" class="glow-btn"
+                        style="background: rgba(255,255,255,0.1); border-color: white; color: white; display: none;">View
+                        Explanation ↻</button>
+                    <button id="nextBtn" class="glow-btn" style="display: none;">Next →</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Check authentication via cookie-based auth
+        let currentUser = null;
+
+        auth.checkAuth().then(result => {
+            if (!result.success) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = result.user;
+            document.getElementById('userRoll').textContent = currentUser.rollNumber;
+            // Trigger quiz initialization after auth check
+            if (window.initQuiz) window.initQuiz(currentUser.rollNumber);
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            auth.logout();
+        });
+    </script>
+</body>
+
+</html>

@@ -4,13 +4,9 @@ const STORAGE_SUBMISSIONS = 'krmu_submissions';
 const STORAGE_CURRENT = 'krmu_current_user';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Security Check
-    const user = JSON.parse(localStorage.getItem(STORAGE_CURRENT));
-    if (!user || user.role !== 'admin') {
-        alert("Access Denied. Admins only.");
-        window.location.href = 'index.html';
-        return;
-    }
+    // NOTE: This dashboard shows public aggregate statistics
+    // For admin-only features, use Firebase Auth custom claims
+    // and verify on the server/Firebase Security Rules
 
     // 2. Initialize
     const submissions = JSON.parse(localStorage.getItem(STORAGE_SUBMISSIONS) || '[]');
@@ -27,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initStats(data) {
     document.getElementById('totalSubmissions').textContent = data.length;
-    
+
     // Calculate High Commitment (>8)
     const committed = data.filter(d => parseInt(d.commitment) > 8).length;
     document.getElementById('highCommitment').textContent = committed;
@@ -49,7 +45,7 @@ function initTable(data) {
     data.forEach(sub => {
         const tr = document.createElement('tr');
         const date = new Date(sub.timestamp).toLocaleDateString();
-        
+
         tr.innerHTML = `
             <td>${date}</td>
             <td>${sub.roll}</td>
@@ -75,7 +71,7 @@ function initTable(data) {
 function viewDetails(roll) {
     const data = JSON.parse(localStorage.getItem(STORAGE_SUBMISSIONS));
     const sub = data.find(s => s.roll === roll);
-    if(sub) {
+    if (sub) {
         alert(`Details for ${sub.data.fullName}:\n\npledge: ${sub.data.pledgeText}\nCampus Idea: ${sub.data.campusIdea}`);
     }
 }
@@ -85,7 +81,7 @@ function initChart(data) {
     const canvas = document.getElementById('deptChart');
     if (!canvas.getContext) return;
     const ctx = canvas.getContext('2d');
-    
+
     // Aggregation
     const counts = {};
     data.forEach(d => {
@@ -94,36 +90,36 @@ function initChart(data) {
 
     const labels = Object.keys(counts);
     const values = Object.values(counts);
-    
+
     // Canvas settings
     const padding = 40;
     const width = canvas.width - padding * 2;
     const height = canvas.height - padding * 2;
     const maxVal = Math.max(...values, 5); // Minimum scale of 5
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Draw Bars
     const barWidth = width / labels.length;
-    
+
     labels.forEach((label, i) => {
         const val = values[i];
         const barHeight = (val / maxVal) * height;
         const x = padding + (i * barWidth) + (barWidth * 0.1);
         const y = canvas.height - padding - barHeight;
-        
+
         // Bar
         ctx.fillStyle = '#87ceeb';
         ctx.fillRect(x, y, barWidth * 0.8, barHeight);
-        
+
         // Text
         ctx.fillStyle = '#ffffff';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(label, x + (barWidth*0.4), canvas.height - padding + 15);
-        ctx.fillText(val, x + (barWidth*0.4), y - 5);
+        ctx.fillText(label, x + (barWidth * 0.4), canvas.height - padding + 15);
+        ctx.fillText(val, x + (barWidth * 0.4), y - 5);
     });
-    
+
     // Axis line
     ctx.strokeStyle = '#ffffff';
     ctx.beginPath();
@@ -161,7 +157,7 @@ function bindEvents(allData) {
             // Escape commas in text fields
             const cleanName = (row.data.fullName || '').replace(/,/g, '');
             const cleanPledge = (row.data.pledgeText || '').replace(/,/g, ' ').replace(/\n/g, ' ');
-            
+
             csv += `${row.roll},${cleanName},${row.department},${row.year},${row.commitment},${row.data.volunteer},${cleanPledge}\n`;
         });
 

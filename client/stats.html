@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Platform Statistics - KRMU Green">
+    <meta name="theme-color" content="#0a0a0c">
+    <title>Statistics - KRMU Green</title>
+
+    <!-- Prevent flash of wrong theme -->
+    <script>
+        (function () {
+            const theme = localStorage.getItem('krmu-theme') || 'system';
+            const resolved = theme === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : theme;
+            document.documentElement.dataset.theme = resolved;
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'dark' ? '#0a0a0c' : '#ffffff');
+        })();
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/tokens.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/liquid-glass.css">
+    <style>
+        /* Auth Guard: Hide content until authenticated */
+        body.auth-loading #main {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #main {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="auth-loading">
+    <!-- Skip link -->
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Global Header -->
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a href="dashboard.html" class="site-header__brand">
+                KRMU <span class="site-header__brand-accent">GREEN</span>
+            </a>
+
+            <nav class="site-header__nav">
+                <div id="themeToggle"></div>
+                <a href="dashboard.html" class="btn btn--ghost btn--sm">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main" class="container mt-6 mb-12">
+
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl font-bold">Platform Statistics</h1>
+                <p class="text-muted">Real-time overview of student engagement</p>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="refreshBtn" class="btn btn--secondary btn--sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <button id="exportBtn" class="btn btn--ghost btn--sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="card p-6 animate-slideUp">
+                <h3 class="text-sm font-medium text-muted mb-2">Total Students</h3>
+                <div class="text-3xl font-bold" id="totalStudents">
+                    <div class="skeleton skeleton--text w-20"></div>
+                </div>
+            </div>
+
+            <div class="card p-6 animate-slideUp animate-delay-100">
+                <h3 class="text-sm font-medium text-muted mb-2">Total Impact</h3>
+                <div class="text-3xl font-bold text-primary" id="totalImpact">
+                    <div class="skeleton skeleton--text w-20"></div>
+                </div>
+            </div>
+
+            <div class="card p-6 animate-slideUp animate-delay-200">
+                <h3 class="text-sm font-medium text-muted mb-2">Platform Activity</h3>
+                <div class="text-3xl font-bold" id="totalActivity">
+                    <div class="skeleton skeleton--text w-20"></div>
+                </div>
+                <p class="text-xs text-muted mt-1">OTP Requests & Logins</p>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-6 animate-slideUp animate-delay-300">
+            <div class="card__content p-4 flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <input type="text" id="searchInput" class="input" placeholder="Search by name or roll number...">
+                </div>
+                <!-- Add more filters here later -->
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card animate-slideUp animate-delay-400">
+            <div class="card__header">
+                <h3 class="card__title text-lg">Detailed Activity Log</h3>
+            </div>
+            <div class="card__content p-0">
+                <div class="table-container border-0 rounded-none">
+                    <table class="table table--responsive w-full" id="statsTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Student Name</th>
+                                <th>Roll Number</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsTableBody">
+                            <!-- Skeleton Rows -->
+                            ${[1,2,3,4,5].map(() => `
+                            <tr>
+                                <td>
+                                    <div class="skeleton skeleton--text w-24"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton--text w-32"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton--text w-20"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton--text w-16"></div>
+                                </td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Pagination -->
+            <div class="card__footer flex justify-between items-center bg-muted/5 p-4 border-t border-border">
+                <p class="text-xs text-muted">Showing recent 20 entries</p>
+                <div class="pagination">
+                    <button class="pagination__btn" disabled>&lt;</button>
+                    <button class="pagination__btn pagination__btn--active">1</button>
+                    <button class="pagination__btn" disabled>&gt;</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Grid Styles -->
+    <style>
+        .grid {
+            display: grid;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .p-6 {
+            padding: 1.5rem;
+        }
+
+        .mb-8 {
+            margin-bottom: 2rem;
+        }
+
+        .mr-1 {
+            margin-right: 0.25rem;
+        }
+
+        .bg-muted\/5 {
+            background-color: hsl(var(--muted) / 0.05);
+        }
+
+        .font-mono {
+            font-family: var(--font-mono);
+        }
+
+        @media (min-width: 768px) {
+            .md\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .md\:flex-row {
+                flex-direction: row;
+            }
+
+            .md\:items-center {
+                align-items: center;
+            }
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { createThemeToggle } from './js/theme.js';
+        const toggleContainer = document.getElementById('themeToggle');
+        if (toggleContainer) createThemeToggle(toggleContainer);
+    </script>
+    <script type="module" src="js/stats.js"></script>
+</body>
+
+</html>

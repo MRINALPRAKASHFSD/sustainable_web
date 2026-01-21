@@ -1,7 +1,14 @@
 /* script.js - 3D ANIMATED FLASHCARD EDITION */
 
+// HTML Sanitization Helper - Prevents XSS attacks
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
 window.addEventListener('firebase-ready', () => { initApp(); });
-if (window.auth && window.db) initApp();
 
 // Added explanations based on your PDF content
 const QUIZ_DATA = [
@@ -31,22 +38,21 @@ let currentQuestionIndex = 0;
 let currentScore = 0;
 let currentUserRoll = "";
 let isLocked = false;
-let isRegistering = false;
 
 function initApp() {
-    if (document.getElementById('authForm')) setupAuthPage();
+    // Initialize quiz if on quiz page
     if (document.getElementById('card-inner')) {
-        window.onAuthStateChanged(window.auth, (user) => {
-            if (user) {
-                currentUserRoll = user.email ? user.email.split('@')[0] : "Student";
-                loadQuestion(0);
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
+        // Auth is handled by form.html script - wait for initQuiz call
     }
+    // Initialize dashboard if on dashboard page  
     if (document.getElementById('totalCount')) setupLiveDashboard();
 }
+
+// Called from form.html after auth check
+window.initQuiz = function (rollNumber) {
+    currentUserRoll = rollNumber;
+    loadQuestion(0);
+};
 
 // --- AUTH LOGIC ---
 function setupAuthPage() {
@@ -58,7 +64,7 @@ function setupAuthPage() {
         const submitBtn = document.getElementById('submitBtn');
         const toggleText = document.getElementById('toggleText');
 
-        if(isRegistering) {
+        if (isRegistering) {
             formTitle.textContent = "Student Register";
             submitBtn.textContent = "Create Account";
             toggleText.textContent = "Have account?";
@@ -75,14 +81,25 @@ function setupAuthPage() {
         e.preventDefault();
         const roll = document.getElementById('roll').value.trim();
         const pass = document.getElementById('pass').value;
+
+        // Input validation - prevent injection and ensure proper format
+        if (!/^[a-zA-Z0-9]{5,15}$/.test(roll)) {
+            alert('Invalid roll number format. Use 5-15 alphanumeric characters only.');
+            return;
+        }
+        if (pass.length < 6) {
+            alert('Password must be at least 6 characters.');
+            return;
+        }
+
         const email = `${roll}@krmu.edu.in`;
 
-        const p = isRegistering 
+        const p = isRegistering
             ? window.createUserWithEmailAndPassword(window.auth, email, pass)
             : window.signInWithEmailAndPassword(window.auth, email, pass);
-            
+
         p.then(() => window.location.href = 'form.html')
-         .catch(err => alert(err.message));
+            .catch(err => alert(err.message));
     });
 }
 
@@ -90,7 +107,7 @@ function setupAuthPage() {
 function loadQuestion(index) {
     const q = QUIZ_DATA[index];
     const cardInner = document.getElementById('card-inner');
-    
+
     // Reset Card State
     cardInner.classList.remove('flipped');
     isLocked = false;
@@ -109,7 +126,7 @@ function loadQuestion(index) {
     // Build Options
     const optsContainer = document.getElementById('options-container');
     optsContainer.innerHTML = '';
-    
+
     q.options.forEach((opt, i) => {
         const btn = document.createElement('div');
         btn.className = 'quiz-option';
@@ -128,11 +145,11 @@ function loadQuestion(index) {
 
     // Button Listeners
     document.getElementById('skipBtn').onclick = () => handleAnswer(-1, index, null);
-    
+
     document.getElementById('flipBtn').onclick = () => {
         cardInner.classList.toggle('flipped');
     };
-    
+
     document.getElementById('flipBackBtn').onclick = () => {
         cardInner.classList.remove('flipped');
     };
@@ -157,13 +174,13 @@ function handleAnswer(selectedIndex, qIndex, btn) {
         showToast("Skipped (0)", "popup-skip");
         // Highlight correct anyway
         opts[correctIndex].classList.add('correct');
-    } 
+    }
     else if (selectedIndex === correctIndex) {
         // CORRECT
         currentScore += 5;
         btn.classList.add('correct');
         showToast("Correct! +5", "popup-correct");
-    } 
+    }
     else {
         // WRONG
         currentScore -= 1;
@@ -203,7 +220,7 @@ function finishQuiz() {
         volunteer: "Yes",
         timestamp: new Date().toISOString()
     };
-    
+
     window.dbPush(window.dbRef(window.db, 'submissions'), newData).then(() => {
         alert(`Quiz Finished! Final Score: ${currentScore}`);
         window.location.href = 'dashboard.html';
@@ -215,18 +232,18 @@ function setupLiveDashboard() {
     window.dbOnValue(window.dbRef(window.db, 'submissions'), (snap) => {
         const data = snap.val() ? Object.values(snap.val()) : [];
         document.getElementById('totalCount').textContent = data.length;
-        if(data.length) {
-            const sum = data.reduce((a,b)=>a+parseInt(b.score||0),0);
-            document.getElementById('avgScore').textContent = Math.round(sum/data.length);
+        if (data.length) {
+            const sum = data.reduce((a, b) => a + parseInt(b.score || 0), 0);
+            document.getElementById('avgScore').textContent = Math.round(sum / data.length);
         }
         const list = document.getElementById('pledgeList');
-        if(list && data.length) {
+        if (list && data.length) {
             list.innerHTML = data.slice().reverse().map(d => `
                 <div style="padding:10px; border-bottom:1px solid #333; color:#ccc;">
-                    <span style="color:#00ff9d">${d.roll}</span>: ${d.pledge}
+                    <span style="color:#00ff9d">${escapeHtml(d.roll)}</span>: ${escapeHtml(d.pledge)}
                 </div>`).join('');
         }
     });
 }
 
-window.logout = function() { window.signOut(window.auth).then(()=>window.location.href='index.html'); }
+window.logout = function () { window.signOut(window.auth).then(() => window.location.href = 'index.html'); }

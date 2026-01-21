@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Student Dashboard - KRMU Green">
+    <meta name="theme-color" content="#0a0a0c">
+    <title>Dashboard - KRMU Green</title>
+
+    <!-- Prevent flash of wrong theme -->
+    <script>
+        (function () {
+            const theme = localStorage.getItem('krmu-theme') || 'system';
+            const resolved = theme === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : theme;
+            document.documentElement.dataset.theme = resolved;
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'dark' ? '#0a0a0c' : '#ffffff');
+        })();
+    </script>
+
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/tokens.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/liquid-glass.css">
+    <style>
+        /* Auth Guard: Hide content until authenticated */
+        body.auth-loading #main {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #main {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="auth-loading">
+    <!-- Skip link -->
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Global Header -->
+    <header class="site-header">
+        <div class="site-header__inner">
+            <a href="dashboard.html" class="site-header__brand">
+                KRMU <span class="site-header__brand-accent">GREEN</span>
+            </a>
+
+            <nav class="site-header__nav">
+                <div id="themeToggle"></div>
+                <button id="logoutBtn" class="btn btn--ghost btn--sm">Sign out</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main" class="container mt-6 mb-6">
+
+        <!-- Welcome Section -->
+        <section class="mb-6 animate-slideUp">
+            <h1 class="text-2xl font-bold mb-2">Welcome back, <span id="userName" class="text-primary">Student</span>
+            </h1>
+            <p class="text-muted">Global Impact Dashboard</p>
+        </section>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Impact Card (Glass) -->
+            <div class="card glass glass--accent p-6 animate-scaleIn animate-delay-100">
+                <div class="glass__shine"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-muted">Total Impact</h3>
+                    <span class="badge badge--primary">Live</span>
+                </div>
+                <div class="text-4xl font-bold mb-1" id="totalImpact">
+                    <div class="skeleton skeleton--title w-20"></div>
+                </div>
+                <p class="text-xs text-muted">Students Engaged</p>
+            </div>
+
+            <!-- Volunteers Card -->
+            <div class="card glass p-6 animate-scaleIn animate-delay-200">
+                <div class="glass__shine"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-muted">Volunteers</h3>
+                </div>
+                <div class="text-4xl font-bold mb-1" id="volunteerCount">
+                    <div class="skeleton skeleton--title w-20"></div>
+                </div>
+                <p class="text-xs text-muted">Committed to Help</p>
+            </div>
+
+            <!-- Avg Score Card -->
+            <div class="card p-6 animate-scaleIn animate-delay-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-muted">My Contribution</h3>
+                </div>
+                <div class="text-4xl font-bold mb-1" id="myScore">0</div>
+                <a href="form.html" class="btn btn--link text-xs mt-2">Take New Quiz →</a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <section class="mb-8 animate-slideUp animate-delay-200">
+            <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="form.html"
+                    class="card glass glass--subtle p-4 hover:border-primary transition-colors flex flex-col items-center justify-center gap-2 text-center h-24">
+                    <span class="text-xl">📝</span>
+                    <span class="text-sm font-medium">Take Quiz</span>
+                </a>
+                <a href="stats.html"
+                    class="card glass glass--subtle p-4 hover:border-primary transition-colors flex flex-col items-center justify-center gap-2 text-center h-24">
+                    <span class="text-xl">📊</span>
+                    <span class="text-sm font-medium">View Stats</span>
+                </a>
+                <button onclick="alert('Coming soon!')"
+                    class="card p-4 hover:border-primary transition-colors flex flex-col items-center justify-center gap-2 text-center h-24">
+                    <span class="text-xl">📅</span>
+                    <span class="text-sm font-medium">Events</span>
+                </button>
+                <button onclick="alert('Coming soon!')"
+                    class="card p-4 hover:border-primary transition-colors flex flex-col items-center justify-center gap-2 text-center h-24">
+                    <span class="text-xl">🤝</span>
+                    <span class="text-sm font-medium">Volunteer</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Leaderboard & Activity Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slideUp animate-delay-300">
+
+            <!-- Top Departments -->
+            <div class="card">
+                <div class="card__header flex items-center justify-between">
+                    <h3 class="card__title text-lg">🏆 Top Departments</h3>
+                </div>
+                <div class="card__content p-0">
+                    <div class="table-container border-0 rounded-none">
+                        <table class="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Department</th>
+                                    <th class="text-right">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deptLeaderboard">
+                                <!-- Skeleton rows -->
+                                <tr>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-4"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-32"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-8 ml-auto"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-4"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-24"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-8 ml-auto"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-4"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-28"></div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton skeleton--text w-8 ml-auto"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card__footer justify-center border-t border-border mt-0 p-3">
+                    <button class="btn btn--ghost btn--sm text-muted">View Full Leaderboard</button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card__header">
+                    <h3 class="card__title text-lg">Recent Pledges</h3>
+                </div>
+                <div class="card__content">
+                    <div id="pledgeList" class="flex flex-col gap-3">
+                        <!-- Skeleton items -->
+                        <div class="flex items-center gap-3">
+                            <div class="skeleton skeleton--avatar"></div>
+                            <div class="flex-1">
+                                <div class="skeleton skeleton--text w-32 mb-1"></div>
+                                <div class="skeleton skeleton--text w-20 h-3"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="skeleton skeleton--avatar"></div>
+                            <div class="flex-1">
+                                <div class="skeleton skeleton--text w-24 mb-1"></div>
+                                <div class="skeleton skeleton--text w-16 h-3"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="skeleton skeleton--avatar"></div>
+                            <div class="flex-1">
+                                <div class="skeleton skeleton--text w-40 mb-1"></div>
+                                <div class="skeleton skeleton--text w-24 h-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Additional Styles for Grid Utility (since we don't have Tailwind) -->
+    <style>
+        .grid {
+            display: grid;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .gap-6 {
+            gap: 1.5rem;
+        }
+
+        .p-4 {
+            padding: 1rem;
+        }
+
+        .p-6 {
+            padding: 1.5rem;
+        }
+
+        .h-24 {
+            height: 6rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-8 {
+            margin-bottom: 2rem;
+        }
+
+        .text-2xl {
+            font-size: 1.5rem;
+        }
+
+        .text-4xl {
+            font-size: 2.25rem;
+        }
+
+        .text-lg {
+            font-size: 1.125rem;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .font-medium {
+            font-weight: 500;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .ml-auto {
+            margin-left: auto;
+        }
+
+        .border-t {
+            border-top-width: 1px;
+        }
+
+        .border-border {
+            border-color: hsl(var(--border));
+        }
+
+        .text-primary {
+            color: hsl(var(--primary));
+        }
+
+        .hover\:border-primary:hover {
+            border-color: hsl(var(--primary));
+        }
+
+        .transition-colors {
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        @media (min-width: 768px) {
+            .md\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .md\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { createThemeToggle } from './js/theme.js';
+        import { initGlassShine } from './js/glass-shine.js';
+
+        // Init theme toggle
+        const toggleContainer = document.getElementById('themeToggle');
+        if (toggleContainer) createThemeToggle(toggleContainer);
+
+        // Init glass shine
+        initGlassShine();
+    </script>
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+
+</html>

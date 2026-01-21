@@ -1,0 +1,11 @@
+{
+    "name": "krmu-green",
+    "version": "1.0.0",
+    "description": "KRMU Green - Student Environmental Initiative Portal",
+    "scripts": {
+        "dev": "npm run dev --prefix server",
+        "start": "npm start --prefix server",
+        "install-all": "npm install && npm install --prefix server"
+    },
+    "dependencies": {}
+}

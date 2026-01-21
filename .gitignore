@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+dist/
+
+# Env & Secrets
+.env
+*.json
+!package.json
+!package-lock.json
+service-account.json
+
+# Local DB
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# OS files
+.DS_Store
+Thumbs.db
