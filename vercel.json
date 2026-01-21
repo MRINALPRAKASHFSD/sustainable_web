@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "echo done",
-  "outputDirectory": "client",
+  "public": "client",
   "functions": {
     "api/*.js": {
       "runtime": "@vercel/node@3"
@@ -10,6 +9,7 @@
   "rewrites": [
     { "source": "/auth/:path*", "destination": "/api/auth.js" },
     { "source": "/stats/:path*", "destination": "/api/stats.js" },
-    { "source": "/health", "destination": "/api/health.js" }
+    { "source": "/health", "destination": "/api/health.js" },
+    { "source": "/(.*)", "destination": "/$1" }
   ]
 }
