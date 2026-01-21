@@ -1,15 +1,14 @@
 {
   "version": 2,
-  "public": "client",
-  "functions": {
-    "api/*.js": {
-      "runtime": "@vercel/node@3"
-    }
-  },
-  "rewrites": [
-    { "source": "/auth/:path*", "destination": "/api/auth.js" },
-    { "source": "/stats/:path*", "destination": "/api/stats.js" },
-    { "source": "/health", "destination": "/api/health.js" },
-    { "source": "/(.*)", "destination": "/$1" }
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": null,
+  "outputDirectory": null,
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/auth/(.*)", "dest": "/api/auth.js" },
+    { "src": "/stats/(.*)", "dest": "/api/stats.js" },
+    { "src": "/health", "dest": "/api/health.js" },
+    { "src": "/(.*)", "dest": "/client/$1" }
   ]
 }
