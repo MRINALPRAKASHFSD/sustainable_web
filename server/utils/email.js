@@ -1,6 +1,9 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
+// For Render free tier: SMTP is blocked, so we log OTPs to console instead
+const smtpConfigured = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+
+const transporter = smtpConfigured ? nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: false,
@@ -8,7 +11,7 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
-});
+}) : null;
 
 export async function sendOTPEmail(email, otp, purpose) {
     const subject = purpose === 'register'
@@ -28,10 +31,14 @@ export async function sendOTPEmail(email, otp, purpose) {
     </div>
   `;
 
-    await transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: email,
-        subject,
-        html,
-    });
+    if (transporter) {
+        await transporter.sendMail({
+            from: process.env.SMTP_FROM,
+            to: email,
+            subject,
+            html,
+        });
+    } else {
+        console.log(`\n📧 OTP for ${email}\n🔐 CODE: ${otp}\n`);
+    }
 }
