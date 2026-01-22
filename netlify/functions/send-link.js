@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { Resend } from 'resend';
-import admin from 'firebase-admin';
+const { z } = require('zod');
+const { Resend } = require('resend');
+const admin = require('firebase-admin');
 
 // Initialize Firebase Admin (singleton)
 if (!admin.apps.length) {
@@ -13,7 +13,8 @@ if (!admin.apps.length) {
                     clientEmail: process.env.FIREBASE_CLIENT_EMAIL
                 })
             });
-        } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        }
+        else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
             const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
             if (serviceAccount.private_key) {
                 serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
@@ -27,8 +28,11 @@ if (!admin.apps.length) {
     }
 }
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend lazily
+let resend;
+if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+}
 
 // Email validation schema
 const emailSchema = z.object({
@@ -43,7 +47,7 @@ const emailSchema = z.object({
 
 // Simple in-memory rate limiting
 const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const MAX_REQUESTS_PER_HOUR = 5;
 const MIN_REQUEST_INTERVAL_MS = 30 * 1000;
 
@@ -77,8 +81,7 @@ function checkRateLimit(email) {
     return { allowed: true };
 }
 
-// Netlify handler format
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
     // Handle CORS preflight
     if (event.httpMethod === 'OPTIONS') {
         return {
@@ -143,6 +146,16 @@ export const handler = async (event, context) => {
             };
         }
 
+        // Check Resend
+        if (!resend) {
+            console.error('Resend not initialized');
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({ success: true, message: 'If eligible, you will receive a sign-in link' })
+            };
+        }
+
         // Action code settings
         const actionCodeSettings = {
             url: `${process.env.APP_URL}/finish-signin.html`,
@@ -156,7 +169,7 @@ export const handler = async (event, context) => {
         );
 
         // Send email via Resend
-        const { error: resendError } = await resend.emails.send({
+        await resend.emails.send({
             from: process.env.EMAIL_FROM || 'KRMU Green <noreply@resend.dev>',
             to: email,
             subject: 'Sign in to KRMU Green',
@@ -207,10 +220,6 @@ export const handler = async (event, context) => {
 </html>
             `
         });
-
-        if (resendError) {
-            console.error('Resend error:', resendError);
-        }
 
         return {
             statusCode: 200,

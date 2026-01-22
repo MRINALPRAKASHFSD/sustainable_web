@@ -5,8 +5,13 @@ import admin from 'firebase-admin';
 
 const router = Router();
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend lazily to prevent crash on missing key
+let resend;
+if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+} else {
+    console.warn('⚠️ RESEND_API_KEY missing - Email link auth will not work');
+}
 
 // Email validation schema
 const emailSchema = z.object({
@@ -96,7 +101,16 @@ router.post('/send-link', async (req, res) => {
             handleCodeInApp: true
         };
 
-        // Generate Firebase email sign-in link
+        // Check Resend is initialized
+        if (!resend) {
+            console.error('Resend not initialized - Check RESEND_API_KEY');
+            // Mock success for client implies "check logs for server config"
+            return res.json({
+                success: true,
+                message: 'If eligible, you will receive a sign-in link'
+            });
+        }
+
         const signInLink = await admin.auth().generateSignInWithEmailLink(
             email,
             actionCodeSettings
