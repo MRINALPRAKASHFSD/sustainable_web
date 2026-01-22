@@ -1,225 +1,125 @@
-# KRMU Green - Vercel Deployment Guide
+# KRMU Green - Netlify Deployment Guide
 
 ## Quick Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/krmu-green)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/YOUR_USERNAME/krmu-green)
 
 ## Prerequisites
 
-This project uses **Vercel Postgres** for data persistence. You'll need:
-- A Vercel account
-- Vercel Postgres connected to your project
+This project uses **Netlify Functions** for the magic link authentication. You'll need:
+- A Netlify account
+- Firebase project (for authentication)
+- Resend account (for sending emails)
 
 ## Setup Steps
 
-### 1. Create Vercel Postgres Database
+### 1. Connect to Netlify
 
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Select your project
-3. Go to **Storage** tab
-4. Click **Create Database** → **Postgres**
-5. Name it `krmu-green`
-6. Click **Create and Connect**
+1. Go to [app.netlify.com](https://app.netlify.com)
+2. Click **Add new site** → **Import an existing project**
+3. Connect your GitHub repository
+4. Netlify will auto-detect the config from `netlify.toml`
 
-This automatically adds `POSTGRES_URL` environment variable.
+### 2. Add Environment Variables
 
-### 2. Run Database Migrations
+In **Netlify Dashboard** → **Site settings** → **Environment variables**, add:
 
-After creating Postgres, run the migration script:
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `RESEND_API_KEY` | Resend API key for emails | ✅ |
+| `EMAIL_FROM` | Sender email address | ✅ |
+| `APP_URL` | Your site URL (e.g., `https://your-site.netlify.app`) | ✅ |
+| `FRONTEND_URL` | Same as APP_URL | ✅ |
+| `FIREBASE_PROJECT_ID` | Firebase project ID | ✅ |
+| `FIREBASE_CLIENT_EMAIL` | Firebase service account email | ✅ |
+| `FIREBASE_PRIVATE_KEY` | Firebase private key (with `\n` for newlines) | ✅ |
+
+### 3. Firebase Setup
+
+1. Create project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Enable **Authentication** → **Sign-in method** → **Email/Password**
+3. Toggle **"Email link (passwordless sign-in)"** ON
+4. Go to **Settings** → **Authorized domains** and add your Netlify URL
+5. Go to **Project Settings** → **Service Accounts**
+6. Click **Generate New Private Key**
+7. Copy the values to Netlify environment variables:
+   - `project_id` → `FIREBASE_PROJECT_ID`
+   - `client_email` → `FIREBASE_CLIENT_EMAIL`
+   - `private_key` → `FIREBASE_PRIVATE_KEY`
+
+### 4. Resend Setup
+
+1. Create account at [resend.com](https://resend.com)
+2. Get API Key from **API Keys** tab
+3. (Production) Verify your domain in **Domains** tab
+4. Set `EMAIL_FROM` to an address from your verified domain
+
+> [!NOTE]
+> For Resend free tier, you can only send to your own email unless you verify a domain.
+
+### 5. Deploy
+
+Click **Deploy** in Netlify dashboard. The site will build and deploy automatically.
+
+## Architecture
+
+```
+krmu-green/
+├── client/              # Static frontend (served at root)
+│   ├── index.html       # Sign-in page (magic link)
+│   ├── finish-signin.html # Complete sign-in
+│   ├── dashboard.html   # User dashboard
+│   └── ...
+├── netlify/
+│   └── functions/
+│       └── send-link.js # Serverless function for auth
+├── netlify.toml         # Netlify configuration
+└── package.json
+```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/send-link` | POST | Send magic link email |
+| `/*` | GET | Static files from `/client` |
+
+## Authentication Flow
+
+1. User enters roll number on sign-in page
+2. Backend generates Firebase sign-in link
+3. Link is sent via Resend email API
+4. User clicks link → redirected to `/finish-signin.html`
+5. Firebase completes authentication
+6. User redirected to dashboard
+
+## Local Development
 
 ```bash
 # Install dependencies
 npm install
 
-# Run migration (creates tables)
-node scripts/migrate.js
+# Install Netlify CLI globally (if needed)
+npm install -g netlify-cli
+
+# Start local dev server with functions
+netlify dev
+
+# Visit http://localhost:8888
 ```
 
-This creates:
-- `students` table - for user accounts
-- `otp_requests` table - for OTP storage
+## Troubleshooting
 
-### 3. Push to GitHub
+### Emails not sending?
+- Check `RESEND_API_KEY` is set correctly
+- Verify sender domain in Resend (for production)
+- Check Netlify function logs for errors
 
-```bash
-git add .
-git commit -m "Setup Vercel Postgres integration"
-git push origin main
-```
+### Sign-in link not working?
+- Ensure your domain is in Firebase Authorized Domains
+- Check `APP_URL` matches your actual site URL
+- Verify Firebase config in `js/firebase-init.js`
 
-### 4. Connect to Vercel
-
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Select **Import Git Repository**
-3. Paste your GitHub repo URL
-4. Click **Import**
-5. Vercel will auto-detect the config
-
-### 5. Add Environment Variables
-
-In **Vercel Dashboard** → **Settings** → **Environment Variables**, add:
-
-| Variable | Description | How to Get |
-|----------|-------------|-----------|
-| `JWT_SECRET` | Random secret for JWT | Generate: `openssl rand -base64 32` |
-| `OTP_SECRET` | Random secret for OTP hashing | Generate: `openssl rand -base64 32` |
-| `SMTP_HOST` | Email server | `smtp.gmail.com` for Gmail |
-| `SMTP_PORT` | Email port | `587` for Gmail |
-| `SMTP_USER` | Your email | `your-email@gmail.com` |
-| `SMTP_PASS` | App password | See Firebase setup below |
-| `FIREBASE_SERVICE_ACCOUNT` | Firebase credentials JSON | See Firebase setup below |
-| `FRONTEND_URL` | Your deployment URL | `https://your-project.vercel.app` |
-| `POSTGRES_URL` | Database URL | Added automatically by Vercel |
-| `NODE_ENV` | Environment | `production` |
-
-### 6. Deploy
-
-Click **Deploy** and Vercel will:
-- Build the project
-- Set up the API functions
-- Serve static files from `/client`
-
-## Firebase Setup (Optional)
-
-Firebase is used for authentication tokens. To enable:
-
-1. Create project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Go to **Project Settings** → **Service Accounts**
-3. Click **Generate New Private Key**
-4. Copy the entire JSON
-5. Paste as `FIREBASE_SERVICE_ACCOUNT` in Vercel (as single line)
-
-## Gmail SMTP Setup
-
-To send OTP emails via Gmail:
-
-1. Enable 2FA on your Google account
-2. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-3. Select **Mail** and **Windows Computer**
-4. Copy the generated password
-5. Use as `SMTP_PASS` in Vercel
-
-## Email Link Auth Setup (Resend)
-
-To enable passwordless email-link login:
-
-### 1. Firebase Console
-1. Go to **Authentication** → **Sign-in method**
-2. Enable **Email/Password** provider (if not already)
-3. Toggle **"Email link (passwordless sign-in)"** ON
-4. Go to **Settings** → **Authorized domains**
-5. Add your deployed domain (e.g., `your-app.vercel.app`)
-
-### 2. Resend Setup
-1. Create account at [resend.com](https://resend.com)
-2. Get API Key from **API Keys** tab
-3. (Production) Verify your domain in **Domains** tab
-
-### 3. Environment Variables
-Add these to Vercel/Netlify:
-
-| Variable | Description |
-|----------|-------------|
-| `RESEND_API_KEY` | Your Resend API key |
-| `EMAIL_FROM` | Sender address (e.g., `Login <noreply@yourdomain.com>`) |
-| `APP_URL` | Base URL of your app (e.g., `https://your-app.vercel.app`) |
-
-> [!NOTE]
-> For Resend free tier/sandbox, you can only send emails to your own registered email address unless you verify a domain.
-
-
-### Still getting 404?
-- Check **Deployments** tab in Vercel for build errors
-- Verify `vercel.json` is in root directory
-- Check that `client/` folder has HTML files
-
-### Database connection errors?
-- Verify `POSTGRES_URL` environment variable exists
-- Run migration script: `node scripts/migrate.js`
-- Check Postgres is connected in Vercel Storage tab
-
-### OTP emails not sending?
-- Verify SMTP credentials are correct
-- Check Gmail app password (not regular password)
-- Check email logs: `curl https://your-project.vercel.app/health`
-
-## Database Schema
-
-### students table
-```sql
-- id (PRIMARY KEY)
-- roll_number (UNIQUE)
-- email (UNIQUE)
-- name
-- phone
-- created_at (TIMESTAMP)
-```
-
-### otp_requests table
-```sql
-- id (PRIMARY KEY)
-- email
-- purpose ('register' or 'login')
-- otp_hash
-- expires_at (TIMESTAMP)
-- used_at (TIMESTAMP, NULL if unused)
-- attempts
-- ip
-- created_at (TIMESTAMP)
-```
-
-## API Routes
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/auth/request-otp` | POST | ❌ | Request OTP for login/register |
-| `/auth/verify-otp` | POST | ❌ | Verify OTP and authenticate |
-| `/api/auth/send-link` | POST | ❌ | Send magic link for passwordless login |
-| `/auth/me` | GET | ✅ | Get current user info |
-| `/auth/logout` | POST | ✅ | Logout user |
-| `/stats/summary` | GET | ✅ | Get stats summary |
-| `/stats/activity` | GET | ✅ | Get recent activity |
-| `/health` | GET | ❌ | Health check |
-
-## Local Development
-
-For local development using the original Express server:
-
-```bash
-# Install dependencies
-npm run install-all
-
-# Start dev server
-npm run dev
-
-# Visit http://localhost:3000
-```
-
-Note: Local development won't have Vercel Postgres. Create a local PostgreSQL database or use SQLite.
-
-## File Structure
-
-```
-/
-├── api/
-│   ├── auth.js         # Authentication endpoints
-│   ├── stats.js        # Statistics endpoints
-│   └── health.js       # Health check
-├── client/             # Frontend (served at root)
-│   ├── index.html
-│   ├── login.html
-│   └── ...
-├── scripts/
-│   └── migrate.js      # Database migration
-├── server/             # Original Express server (local dev)
-├── vercel.json         # Vercel configuration
-└── package.json
-```
-
-## Next Steps
-
-After deployment:
-1. Test login/registration at `/login.html`
-2. Check statistics at `/stats.html`
-3. Monitor Vercel dashboard for errors
-4. Set up custom domain in Vercel settings
+### Build errors?
+- Check Netlify deploy logs
+- Ensure all dependencies are in `package.json`

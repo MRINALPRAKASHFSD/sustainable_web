@@ -1,3 +1,5 @@
+# Netlify Configuration for KRMU Green
+
 [build]
   command = "npm install"
   publish = "client"
@@ -6,23 +8,20 @@
 [functions]
   node_bundler = "esbuild"
 
-# Redirect API requests to functions
+# ============ API Redirects ============
+
+# Magic Link Authentication
 [[redirects]]
   from = "/api/auth/send-link"
   to = "/.netlify/functions/send-link"
   status = 200
 
-# Handle client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
+# ============ Security Headers ============
 
-# Headers for security
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    X-XSS-Protection = "1; mode=block"

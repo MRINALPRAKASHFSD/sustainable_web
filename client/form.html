@@ -104,25 +104,46 @@
         </div>
     </div>
 
-    <script src="auth.js"></script>
+    <!-- Firebase Auth SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
     <script src="script.js"></script>
     <script>
-        // Check authentication via cookie-based auth
+        // Check authentication via Firebase
         let currentUser = null;
 
-        auth.checkAuth().then(result => {
-            if (!result.success) {
-                window.location.href = 'index.html';
+        // Wait for Firebase to be ready
+        function checkAuth() {
+            if (!firebase || !firebase.auth) {
+                setTimeout(checkAuth, 100);
                 return;
             }
-            currentUser = result.user;
-            document.getElementById('userRoll').textContent = currentUser.rollNumber;
-            // Trigger quiz initialization after auth check
-            if (window.initQuiz) window.initQuiz(currentUser.rollNumber);
-        });
+
+            firebase.auth().onAuthStateChanged((user) => {
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                currentUser = {
+                    email: user.email,
+                    rollNumber: user.email.split('@')[0]
+                };
+
+                document.getElementById('userRoll').textContent = currentUser.rollNumber;
+
+                // Trigger quiz initialization after auth check
+                if (window.initQuiz) window.initQuiz(currentUser.rollNumber);
+            });
+        }
+
+        checkAuth();
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            auth.logout();
+            firebase.auth().signOut().then(() => {
+                window.location.href = 'index.html';
+            });
         });
     </script>
 </body>
