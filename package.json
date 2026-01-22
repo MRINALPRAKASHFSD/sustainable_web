@@ -10,6 +10,7 @@
         "vercel-build": "echo 'Build complete'"
     },
     "dependencies": {
+        "@vercel/postgres": "^0.7.1",
         "better-sqlite3": "^11.0.0",
         "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",
@@ -20,6 +21,7 @@
         "helmet": "^8.1.0",
         "jsonwebtoken": "^9.0.2",
         "nodemailer": "^6.9.8",
-        "@vercel/postgres": "^0.7.1"
+        "resend": "^6.8.0",
+        "zod": "^4.3.5"
     }
 }

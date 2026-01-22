@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import statsRoutes from './routes/stats.js';
+import emailLinkRoutes from './routes/email-link.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -18,15 +19,17 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for theme toggle
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.gstatic.com", "https://apis.google.com"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "blob:"], // Allow images from data URI (avatars, etc)
-            connectSrc: ["'self'", process.env.FRONTEND_URL || 'http://localhost:5500'],
+            imgSrc: ["'self'", "data:", "blob:"],
+            connectSrc: ["'self'", "https://*.googleapis.com", "https://*.firebaseio.com", "https://*.firebaseapp.com", process.env.FRONTEND_URL || 'http://localhost:5500'],
             mediaSrc: ["'self'", "blob:", "data:"],
+            frameSrc: ["'self'", "https://*.firebaseapp.com"],
         },
     },
 }));
+
 
 // Block access to /server folder if served statically
 app.use('/server', (req, res) => {
@@ -56,6 +59,7 @@ app.use(rateLimit({
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/api/auth', emailLinkRoutes);
 app.use('/stats', statsRoutes);
 
 // Health check

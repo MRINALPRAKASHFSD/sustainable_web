@@ -99,7 +99,34 @@ To send OTP emails via Gmail:
 4. Copy the generated password
 5. Use as `SMTP_PASS` in Vercel
 
-## Troubleshooting
+## Email Link Auth Setup (Resend)
+
+To enable passwordless email-link login:
+
+### 1. Firebase Console
+1. Go to **Authentication** → **Sign-in method**
+2. Enable **Email/Password** provider (if not already)
+3. Toggle **"Email link (passwordless sign-in)"** ON
+4. Go to **Settings** → **Authorized domains**
+5. Add your deployed domain (e.g., `your-app.vercel.app`)
+
+### 2. Resend Setup
+1. Create account at [resend.com](https://resend.com)
+2. Get API Key from **API Keys** tab
+3. (Production) Verify your domain in **Domains** tab
+
+### 3. Environment Variables
+Add these to Vercel/Netlify:
+
+| Variable | Description |
+|----------|-------------|
+| `RESEND_API_KEY` | Your Resend API key |
+| `EMAIL_FROM` | Sender address (e.g., `Login <noreply@yourdomain.com>`) |
+| `APP_URL` | Base URL of your app (e.g., `https://your-app.vercel.app`) |
+
+> [!NOTE]
+> For Resend free tier/sandbox, you can only send emails to your own registered email address unless you verify a domain.
+
 
 ### Still getting 404?
 - Check **Deployments** tab in Vercel for build errors
@@ -147,6 +174,7 @@ To send OTP emails via Gmail:
 |----------|--------|------|-------------|
 | `/auth/request-otp` | POST | ❌ | Request OTP for login/register |
 | `/auth/verify-otp` | POST | ❌ | Verify OTP and authenticate |
+| `/api/auth/send-link` | POST | ❌ | Send magic link for passwordless login |
 | `/auth/me` | GET | ✅ | Get current user info |
 | `/auth/logout` | POST | ✅ | Logout user |
 | `/stats/summary` | GET | ✅ | Get stats summary |

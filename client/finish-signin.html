@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete your sign-in to KRMU Green">
+    <meta name="theme-color" content="#0a0a0c">
+    <title>Finishing Sign In - KRMU Green</title>
+
+    <!-- Prevent flash of wrong theme -->
+    <script>
+        (function () {
+            const theme = localStorage.getItem('krmu-theme') || 'system';
+            const resolved = theme === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : theme;
+            document.documentElement.dataset.theme = resolved;
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'dark' ? '#0a0a0c' : '#ffffff');
+        })();
+    </script>
+
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/tokens.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/liquid-glass.css">
+
+    <style>
+        .auth-layout__video {
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+
+        .auth-layout__video.loaded {
+            opacity: 1;
+        }
+
+        .auth-layout__bg--static {
+            background: linear-gradient(135deg, hsl(240 10% 8%) 0%, hsl(240 10% 4%) 100%);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .loading-state__spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+            border: 3px solid hsl(var(--border));
+            border-top-color: hsl(var(--primary));
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .success-state {
+            text-align: center;
+        }
+
+        .success-state__icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(142 71% 45%) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scale-in 0.3s ease-out;
+        }
+
+        .success-state__icon svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+
+        @keyframes scale-in {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .error-state {
+            text-align: center;
+        }
+
+        .error-state__icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, hsl(0 72% 51%) 0%, hsl(0 84% 60%) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-state__icon svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+
+        .email-prompt {
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Skip link for accessibility -->
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Background with video -->
+    <div class="auth-layout__bg auth-layout__bg--static">
+        <video id="bgVideo" class="auth-layout__video" autoplay loop muted playsinline
+            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1' /%3E"
+            aria-hidden="true">
+            <source src="green-forest-moewalls-com.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="auth-layout__overlay"></div>
+
+    <!-- Header -->
+    <header class="auth-header">
+        <a href="/" class="auth-header__brand">
+            KRMU <span class="auth-header__brand-accent">GREEN</span>
+        </a>
+        <nav class="site-header__nav">
+            <div id="themeToggle"></div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main" class="auth-layout">
+        <div class="auth-layout__card">
+            <div class="card glass glass--accent">
+                <div class="glass__shine"></div>
+                <div class="glass__noise" aria-hidden="true"></div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="step step--active">
+                    <div class="card__header">
+                        <div class="loading-state">
+                            <div class="loading-state__spinner"></div>
+                            <h1 class="card__title">Completing sign-in...</h1>
+                            <p class="card__description">Please wait while we verify your link</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Prompt (for cross-device sign-in) -->
+                <div id="emailPromptState" class="step">
+                    <div class="card__header text-center">
+                        <h1 class="card__title">Confirm your email</h1>
+                        <p class="card__description">Enter the email you used to request the sign-in link</p>
+                    </div>
+
+                    <div class="card__content">
+                        <form id="emailPromptForm" class="form" novalidate>
+                            <div class="field">
+                                <label for="confirmEmail" class="label">Email Address</label>
+                                <input type="email" id="confirmEmail" class="input"
+                                    placeholder="yourrollnumber@krmu.edu.in" autocomplete="email" inputmode="email"
+                                    required>
+                                <div id="confirmEmailError" class="error" role="alert" aria-live="polite"></div>
+                            </div>
+
+                            <button type="submit" id="confirmEmailBtn" class="btn btn--primary btn--full">
+                                Complete sign-in
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Success State -->
+                <div id="successState" class="step">
+                    <div class="card__header">
+                        <div class="success-state">
+                            <div class="success-state__icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <h1 class="card__title">Welcome back!</h1>
+                            <p class="card__description">Sign-in successful. Redirecting you now...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="step">
+                    <div class="card__header">
+                        <div class="error-state">
+                            <div class="error-state__icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </div>
+                            <h1 class="card__title">Sign-in failed</h1>
+                            <p id="errorMessage" class="card__description">The link may have expired or already been
+                                used.</p>
+                        </div>
+                    </div>
+
+                    <div class="card__content text-center">
+                        <a href="login-link.html" class="btn btn--primary">Request a new link</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast container -->
+    <div id="toast" class="toast" role="status" aria-live="polite">
+        <div class="toast__title"></div>
+        <div class="toast__message"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script>
+        // ========== Video Performance Optimization ==========
+        (function () {
+            const video = document.getElementById('bgVideo');
+            if (!video) return;
+
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const isLowPower = navigator.hardwareConcurrency <= 2 || navigator.deviceMemory < 4;
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const isSlowConnection = connection && (connection.saveData || connection.effectiveType === '2g');
+
+            if (prefersReducedMotion || isSlowConnection) {
+                video.remove();
+            } else if (isLowPower) {
+                video.addEventListener('loadeddata', () => {
+                    video.classList.add('loaded');
+                    setTimeout(() => video.pause(), 5000);
+                }, { once: true });
+            } else {
+                video.addEventListener('loadeddata', () => {
+                    video.classList.add('loaded');
+                }, { once: true });
+            }
+        })();
+
+        // ========== Finish Sign-In Flow ==========
+        const elements = {
+            loadingState: document.getElementById('loadingState'),
+            emailPromptState: document.getElementById('emailPromptState'),
+            successState: document.getElementById('successState'),
+            errorState: document.getElementById('errorState'),
+            confirmEmail: document.getElementById('confirmEmail'),
+            confirmEmailError: document.getElementById('confirmEmailError'),
+            confirmEmailBtn: document.getElementById('confirmEmailBtn'),
+            errorMessage: document.getElementById('errorMessage')
+        };
+
+        // Show step
+        function showStep(step) {
+            elements.loadingState.classList.toggle('step--active', step === 'loading');
+            elements.emailPromptState.classList.toggle('step--active', step === 'emailPrompt');
+            elements.successState.classList.toggle('step--active', step === 'success');
+            elements.errorState.classList.toggle('step--active', step === 'error');
+        }
+
+        // Set loading state
+        function setLoading(buttonId, loading) {
+            const btn = document.getElementById(buttonId);
+            if (!btn) return;
+            btn.disabled = loading;
+            if (loading) {
+                btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+                btn.classList.add('btn--loading');
+            } else {
+                btn.classList.remove('btn--loading');
+                if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+            }
+        }
+
+        // Complete sign-in with email
+        async function completeSignIn(email) {
+            if (!firebase || !firebase.auth) {
+                console.error('Firebase not loaded');
+                showError('Firebase SDK not loaded. Please refresh the page.');
+                return;
+            }
+
+            try {
+                const result = await firebase.auth().signInWithEmailLink(email, window.location.href);
+
+                // Clear stored email
+                localStorage.removeItem('emailForSignIn');
+
+                // Show success and redirect
+                showStep('success');
+                setTimeout(() => {
+                    window.location.href = 'form.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('Sign-in error:', error);
+
+                let message = 'The link may have expired or already been used.';
+
+                if (error.code === 'auth/invalid-action-code') {
+                    message = 'This link has expired or already been used. Please request a new one.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'The email address does not match the one used to request the link.';
+                } else if (error.code === 'auth/user-disabled') {
+                    message = 'This account has been disabled. Please contact support.';
+                }
+
+                showError(message);
+            }
+        }
+
+        // Show error state
+        function showError(message) {
+            elements.errorMessage.textContent = message;
+            showStep('error');
+        }
+
+        // Initialize
+        async function init() {
+            // Check if this is a sign-in link
+            if (!firebase || !firebase.auth) {
+                // Wait for Firebase to load
+                setTimeout(init, 100);
+                return;
+            }
+
+            const auth = firebase.auth();
+
+            // Check if the link is a sign-in link
+            if (!auth.isSignInWithEmailLink(window.location.href)) {
+                showError('Invalid sign-in link. Please request a new one.');
+                return;
+            }
+
+            // Try to get email from localStorage (same-device flow)
+            let email = localStorage.getItem('emailForSignIn');
+
+            if (email) {
+                // Same device - complete sign-in automatically
+                await completeSignIn(email);
+            } else {
+                // Different device - prompt for email
+                showStep('emailPrompt');
+                elements.confirmEmail.focus();
+            }
+        }
+
+        // Email prompt form submission
+        document.getElementById('emailPromptForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = elements.confirmEmail.value.trim().toLowerCase();
+
+            // Validate email
+            if (!email || !email.includes('@')) {
+                elements.confirmEmailError.textContent = 'Please enter a valid email address';
+                elements.confirmEmail.classList.add('input--error');
+                return;
+            }
+
+            elements.confirmEmailError.textContent = '';
+            elements.confirmEmail.classList.remove('input--error');
+            setLoading('confirmEmailBtn', true);
+
+            await completeSignIn(email);
+
+            setLoading('confirmEmailBtn', false);
+        });
+
+        // Start initialization
+        init();
+    </script>
+
+    <!-- Theme system -->
+    <script type="module">
+        import { createThemeToggle } from './js/theme.js';
+        const toggleContainer = document.getElementById('themeToggle');
+        if (toggleContainer) createThemeToggle(toggleContainer);
+    </script>
+
+    <!-- Glass shine effect -->
+    <script type="module" src="js/glass-shine.js"></script>
+</body>
+
+</html>

@@ -5,10 +5,28 @@
   "buildCommand": null,
   "outputDirectory": null,
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/auth/(.*)", "dest": "/api/auth.js" },
-    { "src": "/stats/(.*)", "dest": "/api/stats.js" },
-    { "src": "/health", "dest": "/api/health.js" },
-    { "src": "/(.*)", "dest": "/client/$1" }
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/api/auth/send-link",
+      "dest": "/api/auth/send-link.js"
+    },
+    {
+      "src": "/auth/(.*)",
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/stats/(.*)",
+      "dest": "/api/stats.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/api/health.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/$1"
+    }
   ]
 }

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign in to KRMU Green with a magic link - no password required">
+    <meta name="theme-color" content="#0a0a0c">
+    <title>Sign In - KRMU Green</title>
+
+    <!-- Prevent flash of wrong theme -->
+    <script>
+        (function () {
+            const theme = localStorage.getItem('krmu-theme') || 'system';
+            const resolved = theme === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : theme;
+            document.documentElement.dataset.theme = resolved;
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'dark' ? '#0a0a0c' : '#ffffff');
+        })();
+    </script>
+
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/tokens.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/liquid-glass.css">
+
+    <style>
+        .auth-layout__video {
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+
+        .auth-layout__video.loaded {
+            opacity: 1;
+        }
+
+        .auth-layout__bg--static {
+            background: linear-gradient(135deg, hsl(240 10% 8%) 0%, hsl(240 10% 4%) 100%);
+        }
+
+        .success-state {
+            text-align: center;
+        }
+
+        .success-state__icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(142 71% 45%) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse-success 2s ease-in-out infinite;
+        }
+
+        .success-state__icon svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+
+        @keyframes pulse-success {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        .auth-switch {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid hsl(var(--border));
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Skip link for accessibility -->
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Background with video -->
+    <div class="auth-layout__bg auth-layout__bg--static">
+        <video id="bgVideo" class="auth-layout__video" autoplay loop muted playsinline
+            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1' /%3E"
+            aria-hidden="true">
+            <source src="green-forest-moewalls-com.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="auth-layout__overlay"></div>
+
+    <!-- Header -->
+    <header class="auth-header">
+        <a href="/" class="auth-header__brand">
+            KRMU <span class="auth-header__brand-accent">GREEN</span>
+        </a>
+        <nav class="site-header__nav">
+            <div id="themeToggle"></div>
+            <a href="dashboard.html" class="btn btn--ghost btn--sm">View Stats</a>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main" class="auth-layout">
+        <div class="auth-layout__card">
+            <div class="card glass glass--accent">
+                <div class="glass__shine"></div>
+                <div class="glass__noise" aria-hidden="true"></div>
+
+                <!-- Step 1: Enter Email -->
+                <div id="emailStep" class="step step--active">
+                    <div class="card__header text-center">
+                        <h1 class="card__title">Welcome back</h1>
+                        <p class="card__description">Enter your email to receive a magic sign-in link</p>
+                    </div>
+
+                    <div class="card__content">
+                        <form id="sendLinkForm" class="form" novalidate>
+                            <div class="field">
+                                <label for="rollNumber" class="label">Roll Number</label>
+                                <div class="input-group">
+                                    <input type="text" id="rollNumber" class="input" placeholder="e.g. 21005678"
+                                        autocomplete="username" autocapitalize="none" spellcheck="false"
+                                        inputmode="text" aria-describedby="emailHelp emailError" required>
+                                    <span class="input-group__suffix">@krmu.edu.in</span>
+                                </div>
+                                <span id="emailHelp" class="help">We'll send a secure sign-in link to your university
+                                    email</span>
+                                <div id="emailError" class="error" role="alert" aria-live="polite"></div>
+                            </div>
+
+                            <button type="submit" id="sendLinkBtn" class="btn btn--primary btn--full">
+                                Send sign-in link
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="card__footer">
+                        <p class="text-sm text-muted">
+                            Don't have an account? <a href="register.html">Register</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Email Sent Success -->
+                <div id="successStep" class="step">
+                    <div class="card__header">
+                        <div class="success-state">
+                            <div class="success-state__icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <h1 class="card__title">Check your email</h1>
+                            <p class="card__description">
+                                We sent a sign-in link to<br>
+                                <strong id="sentToEmail" class="email-preview mt-2"></strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card__content">
+                        <div class="text-center">
+                            <p class="text-sm text-muted mb-4">
+                                Click the link in your email to sign in. The link expires in 1 hour.
+                            </p>
+                            <button type="button" id="resendLinkBtn" class="btn btn--ghost btn--sm" disabled>
+                                Resend link
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card__footer justify-center">
+                        <button type="button" id="backToEmail" class="btn btn--link text-sm">
+                            ← Use a different email
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast container -->
+    <div id="toast" class="toast" role="status" aria-live="polite">
+        <div class="toast__title"></div>
+        <div class="toast__message"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script>
+        // ========== Video Performance Optimization ==========
+        (function () {
+            const video = document.getElementById('bgVideo');
+            if (!video) return;
+
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const isLowPower = navigator.hardwareConcurrency <= 2 || navigator.deviceMemory < 4;
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const isSlowConnection = connection && (connection.saveData || connection.effectiveType === '2g');
+
+            if (prefersReducedMotion || isSlowConnection) {
+                video.remove();
+            } else if (isLowPower) {
+                video.addEventListener('loadeddata', () => {
+                    video.classList.add('loaded');
+                    setTimeout(() => video.pause(), 5000);
+                }, { once: true });
+            } else {
+                video.addEventListener('loadeddata', () => {
+                    video.classList.add('loaded');
+                }, { once: true });
+            }
+        })();
+
+        // ========== Email Link Login Flow ==========
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : window.location.origin;
+
+        let currentEmail = '';
+        let resendTimer = null;
+        let resendCountdown = 0;
+
+        const elements = {
+            emailStep: document.getElementById('emailStep'),
+            successStep: document.getElementById('successStep'),
+            rollNumber: document.getElementById('rollNumber'),
+            emailError: document.getElementById('emailError'),
+            sendLinkBtn: document.getElementById('sendLinkBtn'),
+            sentToEmail: document.getElementById('sentToEmail'),
+            resendLinkBtn: document.getElementById('resendLinkBtn'),
+            backToEmail: document.getElementById('backToEmail')
+        };
+
+        // Show step
+        function showStep(step) {
+            elements.emailStep.classList.toggle('step--active', step === 'email');
+            elements.successStep.classList.toggle('step--active', step === 'success');
+        }
+
+        // Set loading state
+        function setLoading(buttonId, loading) {
+            const btn = document.getElementById(buttonId);
+            if (!btn) return;
+            btn.disabled = loading;
+            if (loading) {
+                btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+                btn.classList.add('btn--loading');
+            } else {
+                btn.classList.remove('btn--loading');
+                if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+            }
+        }
+
+        // Resend timer
+        function startResendTimer(seconds = 60) {
+            clearResendTimer();
+            resendCountdown = seconds;
+            elements.resendLinkBtn.disabled = true;
+
+            const updateTimer = () => {
+                if (resendCountdown > 0) {
+                    elements.resendLinkBtn.textContent = `Resend link (${resendCountdown}s)`;
+                    resendCountdown--;
+                    resendTimer = setTimeout(updateTimer, 1000);
+                } else {
+                    elements.resendLinkBtn.textContent = 'Resend link';
+                    elements.resendLinkBtn.disabled = false;
+                }
+            };
+            updateTimer();
+        }
+
+        function clearResendTimer() {
+            if (resendTimer) {
+                clearTimeout(resendTimer);
+                resendTimer = null;
+            }
+        }
+
+        // Send sign-in link
+        async function sendSignInLink(email) {
+            try {
+                const res = await fetch(`${API_URL}/api/auth/send-link`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                return await res.json();
+            } catch (error) {
+                console.error('Send link error:', error);
+                return { success: false, message: 'Network error. Please try again.' };
+            }
+        }
+
+        // Form submission
+        document.getElementById('sendLinkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const roll = elements.rollNumber.value.trim().toLowerCase();
+
+            // Validate
+            if (!/^[a-zA-Z0-9]{5,15}$/.test(roll)) {
+                elements.emailError.textContent = 'Roll number must be 5-15 alphanumeric characters';
+                elements.rollNumber.classList.add('input--error');
+                return;
+            }
+
+            elements.emailError.textContent = '';
+            elements.rollNumber.classList.remove('input--error');
+            setLoading('sendLinkBtn', true);
+
+            currentEmail = `${roll}@krmu.edu.in`;
+
+            const result = await sendSignInLink(currentEmail);
+            setLoading('sendLinkBtn', false);
+
+            if (result.success) {
+                // Store email for same-device sign-in completion
+                localStorage.setItem('emailForSignIn', currentEmail);
+                elements.sentToEmail.textContent = currentEmail;
+                startResendTimer(60);
+                showStep('success');
+            } else {
+                elements.emailError.textContent = result.message || 'Failed to send sign-in link';
+            }
+        });
+
+        // Resend link
+        elements.resendLinkBtn.addEventListener('click', async () => {
+            if (!currentEmail) return;
+
+            elements.resendLinkBtn.disabled = true;
+            const result = await sendSignInLink(currentEmail);
+
+            if (result.success) {
+                startResendTimer(60);
+            } else {
+                elements.resendLinkBtn.disabled = false;
+                // Show error toast if available
+            }
+        });
+
+        // Back to email step
+        elements.backToEmail.addEventListener('click', () => {
+            clearResendTimer();
+            showStep('email');
+            elements.rollNumber.focus();
+        });
+
+        // Check if already logged in
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    window.location.href = 'form.html';
+                }
+            });
+        }
+    </script>
+
+    <!-- Theme system -->
+    <script type="module">
+        import { createThemeToggle } from './js/theme.js';
+        const toggleContainer = document.getElementById('themeToggle');
+        if (toggleContainer) createThemeToggle(toggleContainer);
+    </script>
+
+    <!-- Glass shine effect -->
+    <script type="module" src="js/glass-shine.js"></script>
+</body>
+
+</html>
